@@ -41,7 +41,6 @@ def openCsv(csv, headerRows):
                              engine='python') 
     return tempDf
 
-
 def removeKeys(df):
     """ Removes all keys which have 'CI', 'Order', or 'Unnamed' in its column
         names from the data frame. We then strip all blank lines, spaces, & 
@@ -96,8 +95,8 @@ def main():
             year = os.path.split(csv)[-1].split('.csv')[0]
             for headRow in range(0,8):
                 # Tries to load the CSV as a DF by filtering out empty header
-                #   rows. Depending on when the file was made, there could be a
-                #   varying amount of junk header rows we have to trim out.
+                #   rows. Depending on when the file was made, there could be
+                #   a varying amount of junk header rows we have to trim out.
                 tempDf = openCsv(csv, headRow)
                 
                 # Checks to see how many of our keys are valid
