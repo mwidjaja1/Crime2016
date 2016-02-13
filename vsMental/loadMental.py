@@ -125,10 +125,10 @@ for folder in folders:
     # Combines each year's data frame into one larger one & updates row labels
     dataDf = pd.concat([dataDict[year] for year in dataDict], axis=1)
     dataDf = deleteRows(dataDf)
-    print(dataDf)
     
     # Converts DF values to floats by removing the percent sign
     dataDf.replace({'%':''}, regex=True, inplace=True)
+    dataDf = dataDf.astype(float)
     
     # Saves data frame to output files
     dataDf.to_csv(os.path.join(pwd, folder, cate+'.csv'))
