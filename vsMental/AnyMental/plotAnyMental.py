@@ -282,14 +282,13 @@ data = combineData(xData, yData, years)
 
 # Prepares Figure for People Data
 plt.figure()
-f, (ax1, ax2, ax3) = plt.subplots(2,4)
+f, (ax1, ax2, ax3) = plt.subplots(2,4, )
 f.tight_layout()
 ax1.set_ylabel('All Mental Illness Cases')
 
 
 
 # Plots each year vs. Fatalities
-ax1.set_title('2008')
 ax1.set_xlabel('Fatalities')
 for idx, yKey in enumerate(yKeys):
     ax1.scatter(data.Fatalities, data[yKeys[idx]], color=clrs[idx], 

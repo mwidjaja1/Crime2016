@@ -24,10 +24,10 @@ massst.to_pickle(root+'MainShooting.pkl')
 states = massst.State
 
 # Creates Dataframe with 'Binary' Data
-binaryst = pd.DataFrame([massst.Year, massst.Fatalities, massst.Injured,
-                         massst.Total, massst.Venue, massst.Mental, 
-                         massst.Legal, massst.Weapons, massst.Race, 
-                         massst.Gender]).T
+binaryst = pd.DataFrame([massst.Year, massst.Location, massst.Fatalities, 
+                         massst.Injured, massst.Total, massst.Venue, 
+                         massst.Mental, massst.Legal, massst.Weapons,
+                         massst.Race, massst.Gender]).T
 binaryst.index = states
 binaryst.to_pickle(root+'BinaryShooting.pkl')
 
