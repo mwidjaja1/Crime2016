@@ -1,11 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Feb 14 20:00:28 2016
+
+@author: Matthew
+"""
+
 #! /Users/Matthew/anaconda/envs/Python35/bin/python3
 
 """ plotAnyMental.py ----------------------------------------------------------
     Takes the pickled file and plots using it
-
     Input:
     data: The pickled dataframe
-
     Output:
     CSV & Pickled File: Pandas DataFrame with the column names of YYYY as level
                         one & each type of stat as level two vs. each state.
@@ -20,12 +25,10 @@ import os
 def openFile(inDir, inFile):
     """ User should set this to the present working directory where the pkl
         data is. This script will then find the .pkl file inside & return it.
-
         Input:
         inDir: The directory where the file is in. [Default = 'os.getcwd()']
         inFile: An additional string to search the file for before its
                 extension. [Default = '']
-
         Output:
         data: The first .pkl file found in that dir opened up as a dataframe
     """
@@ -38,6 +41,7 @@ def openFile(inDir, inFile):
 def prepareXData(xInData, years):
     """ Takes xData, which is most likely the # of Fatalities, Injuries, &
         Totals from the shootings of each state, and parses it year-by-year.
+        This data is saved in a dictionary for a Year-by-year basis.
         
         Input:
         xInData: DF of xValues which will be filtered & organized by each
@@ -46,147 +50,34 @@ def prepareXData(xInData, years):
                  to organize and concat the data.
         
         Output:
-        xData:   A dictionary where each key is a year & each value is the DF
-                 data for that given year.
+        xData:   The output data from xInData as organized by years
     """
-    xData = {}
+    xData = pd.DataFrame()
+    xYrData = {}
 
-    # Finds year in xData & sums all values up per year for each state
+    # Finds year in xData & sums all values up per state
     for year in years:
         # Finds all shooting victims in each year (Fatalities, Injured, Total).
         #   We then add a column for # of shootings. We then sum it all up.
         xTemp = xInData[xInData.Year == year]
         xTemp.loc[:,'Shooting'] = 1
         xTemp = xTemp.groupby(xTemp.index).sum()
-        del xTemp['Year']
         
-        """
         # Fixes multiple years summation issue if there was more than one
         #   shooting in a state in a given year.
         fixYear = xTemp[xTemp.Shooting>1]
         for state in fixYear.index:
             xTemp.loc[state, 'Year'] = xTemp.loc[state, 'Year'] / \
                                        fixYear.loc[state, 'Shooting']
-                                       """
-                                       
-        # Create Multiindex so it's Year >> [Fatalities, Injured, etc.]
-        yearCols = [year]*len(xTemp.columns)
-        cols = list(zip(*[yearCols, list(xTemp.columns)]))
-        colsIdx = pd.MultiIndex.from_tuples(cols, names=['Year', 'Stat'])
-        xTemp.columns = colsIdx
-
-        # Saves the year's current data to the DataFrame
-        xData[year] = xTemp
     
-    """    
-    # Groups the statistics by stat type and sums it up across all years   
-    summary = xData.groupby(level=['Stat'], axis=1).sum()
+        # Saves the year's current data to the dictionary
+        xData = pd.concat([xData, xYrData], axis=0)   
     
-    # Create Multiindex so it's 'Summary' >> [Fatalities, Injured, etc.]
-    yearCols = ['All']*len(summary.columns)
-    cols = list(zip(*[yearCols, list(summary.columns)]))
-    colsIdx = pd.MultiIndex.from_tuples(cols, names=['Year', 'Stat'])
-    summary.columns = colsIdx
-    
-    # Saves the summarized data to the DataFrame
-    xData['All'] = summary"""
+    xData = pd.DataFrame.from_dict(xYrData)
     return xData
 
-def prepareYData(yInData, yKey, years):
-    """ Takes yData, which is probably the mental heatlh data for each year &
-        age group vs. each state, and parses it year-by-year
-        
-        Input:
-        yInData: Data frame of yValues which will be filtered & organized by
-                 each 'year' in years. If a 'year' is not here, we'll use +/-
-                 1 year before giving up.
-        yKey:    The key of data being extracted from yInData for plotting.
-        years:   The list of years where xInData & yInData will be split up by
-                 initially to organized and concat the data.
-        
-        Output:
-        yData:   A dictionary where each key is a year & each value is the DF
-                 data for that given year.
-    """
-    yData = {}
-    
-    # Gets columns/years from existing yInData
-    yYears = [int(x) for x in list(yInData.columns.get_level_values(0))]
-    
-    for year in years:
-        # Finds alternative year if this year is not in yData
-        if year in yYears:
-            yTemp = yInData[str(year)][yKey]
-        elif year+1 in yYears:
-            yTemp = yInData[str(year+1)][yKey]
-        else:
-            yTemp = yInData[str(year-1)][yKey]
-        
-        # Create Multiindex so it's Year >> [Fatalities, Injured, etc.]
-        if year:
-            yearCols = [year]*len(yTemp.columns)
-            cols = list(zip(*[yearCols, list(yTemp.columns)]))
-            colsIdx = pd.MultiIndex.from_tuples(cols, names=['Year', 'Stat'])
-            yTemp.columns = colsIdx
-        
-            # Saves the year's current data to the DataFrame
-            yData[year] = yTemp
-    
-    return yData 
-    """
-    # Groups the statistics by stat type and sums it up across all years   
-    summary = yData.groupby(level=['Stat'], axis=1).mean()
-    
-    # Create Multiindex so it's 'Summary' >> [Fatalities, Injured, etc.]
-    yearCols = ['All']*len(summary.columns)
-    cols = list(zip(*[yearCols, list(summary.columns)]))
-    colsIdx = pd.MultiIndex.from_tuples(cols, names=['Year', 'Stat'])
-    summary.columns = colsIdx
-    
-    # Saves the summarized data to the DataFrame
-    yData['All'] = summary"""
-    
-    #return yData
-        
-def combineData(xData, yData, years):
-    """ Takes the xData and yData from the two prepare functions above and
-        we combine those two data sets with respect to the years & states. In
-        the process of doing so, we calculate the ratios of Total Down & # of 
-        Shootings vs Mental Health Data for 18 or Older Estimate.
-        
-        Input:
-        xData: The dictionary of DFs for X (murdData)
-        yData: The dictionary of DFs for Y (mentData)
-        years: The list of valid years
-        
-        Output:
-        data: The DF for all data values per year
-    """
-    data = pd.DataFrame()
-    for year in years:
-        # Sets Ratios
-        yTemp = yData[year]
-        xTemp = xData[year]
-        yrTemp = pd.DataFrame()
-        yrTemp.loc[:, 'vsTotal'] = xTemp[year]['Total']/ \
-                                   yTemp[year]['18 or Older Estimate']
-        yrTemp.loc[:, 'vsShoot'] = xTemp[year]['Shooting']/ \
-                                   yTemp[year]['18 or Older Estimate']
-        
-        # Sets Multindex for Summary/Ratios DataFrame
-        yearCols = [year]*len(yrTemp.columns)
-        cols = list(zip(*[yearCols, list(yrTemp.columns)]))
-        colsIdx = pd.MultiIndex.from_tuples(cols, names=['Year', 'Stat'])
-        yrTemp.columns = colsIdx
-        
-        yearDf = pd.concat([xTemp, yTemp, yrTemp], axis=1)
-        data = pd.concat([data, yearDf], axis=1)
-    
-    return data
-
 def prepareData(xInData, yInData, yKey, years):
-    """ DEPRICIATED
-        Takes xData which should be the sum across all of its time periods &
+    """ Takes xData which should be the sum across all of its time periods &
         yData which shold be the average across all of its time periods, and
         concats it to a data frame so both are indexed by their states, where
         states with no data are populated with 0 values.
@@ -270,11 +161,7 @@ clrs = ['k', 'g']
 
 # Prepares Data
 xData = prepareXData(murdData, years)
-yData = prepareYData(mentData, yKeys, years)
-data = combineData(xData, yData, years)
-#data = ratios(data, years)
-#data = prepareData(murdData, mentData, yKeys, years)
-#test = pd.concat([xData, mentData], levels=['Year'], axis=1)
+data = prepareData(murdData, mentData, yKeys, years)
 
 # Prepare quantity of shootings per year
 #for year in years:
@@ -282,14 +169,11 @@ data = combineData(xData, yData, years)
 
 # Prepares Figure for People Data
 plt.figure()
-f, (ax1, ax2, ax3) = plt.subplots(2,4)
+f, (ax1, ax2, ax3) = plt.subplots(1,3, sharey=True)
 f.tight_layout()
 ax1.set_ylabel('All Mental Illness Cases')
 
-
-
 # Plots each year vs. Fatalities
-ax1.set_title('2008')
 ax1.set_xlabel('Fatalities')
 for idx, yKey in enumerate(yKeys):
     ax1.scatter(data.Fatalities, data[yKeys[idx]], color=clrs[idx], 
