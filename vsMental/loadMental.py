@@ -86,7 +86,7 @@ def deleteRows(data):
         if region in data.index: data.drop(region, inplace=True)
         
     # Renames States
-    data.index.str.replace('District of Columbia','D.C.')
+    data.index = data.index.str.replace('District of Columbia','D.C.')
     return data
 
 """ Main function loops through each folder in the pwd directory. We then loop

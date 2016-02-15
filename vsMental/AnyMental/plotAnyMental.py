@@ -150,21 +150,39 @@ def prepareYData(yInData, yKey, years):
         
 def combineData(xData, yData, years):
     """ Takes the xData and yData from the two prepare functions above and
-        we combine those two data sets with respect to the years & states.
+        we combine those two data sets with respect to the years & states. In
+        the process of doing so, we calculate the ratios of Total Down & # of 
+        Shootings vs Mental Health Data for 18 or Older Estimate.
+        
+        Input:
+        xData: The dictionary of DFs for X (murdData)
+        yData: The dictionary of DFs for Y (mentData)
+        years: The list of valid years
+        
+        Output:
+        data: The DF for all data values per year
     """
     data = pd.DataFrame()
     for year in years:
-        data = pd.concat([data, pd.concat([xData[year], yData[year]], axis=1)],
-                         axis=1)
+        # Sets Ratios
+        yTemp = yData[year]
+        xTemp = xData[year]
+        yrTemp = pd.DataFrame()
+        yrTemp.loc[:, 'vsTotal'] = xTemp[year]['Total']/ \
+                                   yTemp[year]['18 or Older Estimate']
+        yrTemp.loc[:, 'vsShoot'] = xTemp[year]['Shooting']/ \
+                                   yTemp[year]['18 or Older Estimate']
+        
+        # Sets Multindex for Summary/Ratios DataFrame
+        yearCols = [year]*len(yrTemp.columns)
+        cols = list(zip(*[yearCols, list(yrTemp.columns)]))
+        colsIdx = pd.MultiIndex.from_tuples(cols, names=['Year', 'Stat'])
+        yrTemp.columns = colsIdx
+        
+        yearDf = pd.concat([xTemp, yTemp, yrTemp], axis=1)
+        data = pd.concat([data, yearDf], axis=1)
     
     return data
-
-def ratios(data, years):
-    """ Calculates the ratios between the 'people' statistics & mental helth
-        data.
-    """
-    for year in years:
-        temp = data[year]
 
 def prepareData(xInData, yInData, yKey, years):
     """ DEPRICIATED
@@ -254,6 +272,7 @@ clrs = ['k', 'g']
 xData = prepareXData(murdData, years)
 yData = prepareYData(mentData, yKeys, years)
 data = combineData(xData, yData, years)
+#data = ratios(data, years)
 #data = prepareData(murdData, mentData, yKeys, years)
 #test = pd.concat([xData, mentData], levels=['Year'], axis=1)
 
